@@ -28,6 +28,20 @@ end;
 { ---------------------------------------------------------------------------- }
 
 
+{ ExampleClass2 < ExampleClass }
+type
+  ExampleClass2 = class(ExampleClass)
+    public
+      function calculate_f(x : double) : double; override;
+end;
+
+function ExampleClass2.calculate_f(x : double) : double;
+begin
+  calculate_f := 100 * power(x - 0.24, 2);
+end;
+{ ---------------------------------------------------------------------------- }
+
+
 { class Interval. Represents interval like [3, 7] or [-1, 1] or etc. }
 type
   IntervalClass = class
@@ -266,23 +280,143 @@ end;
 { ---------------------------------------------------------------------------- }
 
 
+{ class DichotomyMethodClass }
+type
+  DichotomyMethodClass = class
+    private
+      _example  : ExampleClass;
+      _interval : IntervalClass;
+      _delta    : double;
+      _epsilon  : double;
+
+    public
+      constructor create(
+        example : ExampleClass;
+        interval : IntervalClass;
+        delta : double;
+        epsilon: double
+      );
+
+      function get_example() : ExampleClass;
+      function get_interval() : IntervalClass;
+      function get_delta() : double;
+      function get_epsilon() : double;
+      function apply() : double;
+end;
+
+constructor DichotomyMethodClass.create(
+  example : ExampleClass;
+  interval : IntervalClass;
+  delta : double;
+  epsilon: double
+);
+begin
+  _example  := example;
+  _interval := interval;
+  _delta    := delta;
+  _epsilon  := epsilon;
+end;
+
+function DichotomyMethodClass.get_example() : ExampleClass;
+begin
+  get_example := _example;
+end;
+
+function DichotomyMethodClass.get_interval() : IntervalClass;
+begin
+  get_interval := _interval;
+end;
+
+function DichotomyMethodClass.get_delta() : double;
+begin
+  get_delta := _delta;
+end;
+
+function DichotomyMethodClass.get_epsilon() : double;
+begin
+  get_epsilon := _epsilon;
+end;
+
+function DichotomyMethodClass.apply() : double;
+var
+  example   : ExampleClass;
+  interval  : IntervalClass;
+  delta     : double;
+  epsilon   : double;
+  current_a : double;
+  current_b : double;
+  next_a    : double;
+  next_b    : double;
+  x_1       : double;
+  x_2       : double;
+  f_of_x_1  : double;
+  f_of_x_2  : double;
+begin
+  example  := get_example();
+  interval := get_interval();
+  delta    := get_delta();
+  epsilon  := get_epsilon();
+
+  current_a := interval.get_lower_limit();
+  current_b := interval.get_upper_limit();
+
+  repeat
+    x_1 := (current_a + current_b - delta) / 2;
+    x_2 := (current_a + current_b + delta) / 2;
+
+    f_of_x_1 := example.calculate_f(x_1);
+    f_of_x_2 := example.calculate_f(x_2);
+
+    if (f_of_x_1 <= f_of_x_2) then
+    begin
+      next_a := current_a;
+      next_b := x_2;
+    end
+    else
+    begin
+      next_b := current_b;
+      next_a := x_1;
+    end;
+
+    current_a := next_a;
+    current_b := next_b;
+  until abs(next_a - next_b) <= epsilon;
+
+  apply := (next_a + next_b) / 2;
+end;
+{ ---------------------------------------------------------------------------- }
+
+
 { Program variables }
 var
-  example       : ExampleClass;
-  dsc_algorithm : DSCAlgorithmClass;
-  interval      : IntervalClass;
-
+  delta            : double;
+  epsilon          : double;
+  example          : ExampleClass;
+  dsc_algorithm    : DSCAlgorithmClass;
+  interval         : IntervalClass;
+  dichotomy_method : DichotomyMethodClass;
+  result           : double;
 { Like main }
 begin
-  writeln('Hello');
+  delta            := 0.05;
+  epsilon          := 0.2;
+  example          := ExampleClass1.create();
+  // delta            := 0.05;
+  // epsilon          := 0.2;
+  // example          := ExampleClass1.create();
 
-  example       := ExampleClass1.create();
-  dsc_algorithm := DSCAlgorithmClass.create(example);
+  dsc_algorithm    := DSCAlgorithmClass.create(example);
+  interval         := dsc_algorithm.apply();
 
-  interval      := dsc_algorithm.apply();
+  writeln('Interval: [');
+  writeln('  ', interval.get_lower_limit(), ',');
+  writeln('  ', interval.get_upper_limit());
+  writeln(']');
 
-  writeln(interval.get_lower_limit());
-  writeln(interval.get_upper_limit());
+  dichotomy_method := DichotomyMethodClass.create(example, interval, delta, epsilon);
+  result           := dichotomy_method.apply();
+
+  writeln('Result: ', result);
 
   readkey;
 end.
